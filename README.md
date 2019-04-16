@@ -15,7 +15,7 @@ allprojects {
 **Step 2. Add the dependency**
 ```
 dependencies {
-            implementation('com.github.CodyyAndroid:Downloader:1.2.3')
+            implementation('com.github.CodyyAndroid:Downloader:1.2.4')
 	}
 
 ```

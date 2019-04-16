@@ -138,6 +138,7 @@ public class DownloadService extends Service implements Handler.Callback {
         } else {
             DownloadEntity downloadEntity = mDownloadDao.query(entity.getId());
             if (downloadEntity.getStatus() == DownloadFlag.COMPLETED) {
+                sendStartOrCompleteMessage(DownloadFlag.COMPLETED, entity.getId());//如果status=DownloadFlag.COMPLETED,发送文件下载完成消息
                 return;
             } else {
                 mDownloadDao.updateProgress(entity.getId(), downloadEntity.getCurrent(), downloadEntity.getTotal(), DownloadFlag.WAITING);

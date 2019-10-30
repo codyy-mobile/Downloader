@@ -1,4 +1,4 @@
-# 文件下载器 [![](https://jitpack.io/v/CodyyAndroid/Downloader.svg)](https://jitpack.io/#CodyyAndroid/Downloader)
+# 文件下载器 [![](https://jitpack.io/v/codyy-mobile/Downloader.svg)](https://jitpack.io/#codyy-mobile/Downloader)
 
 ## How to
 **Step 1. Add the JitPack repository to your build file**

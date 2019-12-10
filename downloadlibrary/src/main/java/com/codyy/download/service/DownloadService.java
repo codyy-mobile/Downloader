@@ -78,7 +78,7 @@ public class DownloadService extends Service implements Handler.Callback {
         super.onCreate();
         Cog.d(TAG, "DownloadService onCreate");
         mNetReceiver = new NetReceiver();
-        registerReceiver(mNetReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));//开启网络状态变化监测
+        registerReceiver(mNetReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION),"android.permission.ACCESS_NETWORK_STATE",null);//开启网络状态变化监测
         Cog.d(TAG, "Network State Receiver register");
         mHandler = new Handler(this);
         mDownloadDao = DownloadDaoImpl.getInstance(this);

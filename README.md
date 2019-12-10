@@ -15,10 +15,10 @@ allprojects {
 **Step 2. Add the dependency**
 ```
 dependencies {
-            implementation('com.github.CodyyAndroid:Downloader:1.2.4-hotfix')
+            implementation('com.github.codyy-mobile:Downloader:1.2.4-hotfix')
 	}
 
 ```
-## [API](https://jitpack.io/com/github/CodyyAndroid/Downloader/1.2.4/javadoc/)
+## [API](https://jitpack.io/com/github/codyy-mobile/Downloader/1.2.4/javadoc/)
 
 

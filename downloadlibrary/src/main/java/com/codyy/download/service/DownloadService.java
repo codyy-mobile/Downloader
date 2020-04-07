@@ -14,11 +14,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.StatFs;
+import android.telephony.TelephonyManager;
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 
 import com.codyy.download.Downloader;
 import com.codyy.download.db.DownloadDao;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -78,7 +80,7 @@ public class DownloadService extends Service implements Handler.Callback {
         super.onCreate();
         Cog.d(TAG, "DownloadService onCreate");
         mNetReceiver = new NetReceiver();
-        registerReceiver(mNetReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION),"android.permission.ACCESS_NETWORK_STATE",null);//开启网络状态变化监测
+        registerReceiver(mNetReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION), "android.permission.ACCESS_NETWORK_STATE", null);//开启网络状态变化监测
         Cog.d(TAG, "Network State Receiver register");
         mHandler = new Handler(this);
         mDownloadDao = DownloadDaoImpl.getInstance(this);
@@ -99,6 +101,7 @@ public class DownloadService extends Service implements Handler.Callback {
         }
         mHandler = null;
         mDownLoadListeners.clear();
+        Downloader.setBound(false);
         Cog.d(TAG, "DownloadService onDestroy");
     }
 
@@ -291,9 +294,7 @@ public class DownloadService extends Service implements Handler.Callback {
         }
         mDownloadDao.deleteAll();
         for (String key : mDownThreadMap.keySet()) {
-            if (mDownLoadListeners.containsKey(key)) {
-                mDownLoadListeners.remove(key);
-            }
+            mDownLoadListeners.remove(key);
 //            sendDeleteMessage(DownloadFlag.DELETED, key);
         }
         mDownThreadMap.clear();
@@ -308,13 +309,11 @@ public class DownloadService extends Service implements Handler.Callback {
     public void delete(boolean isRetained, @NonNull String... ids) {
         for (String id : ids) {
             if (mDownThreadMap.containsKey(id)) {
-                mDownThreadMap.get(id).pause();
+                Objects.requireNonNull(mDownThreadMap.get(id), "DownloadService delete failed").pause();
                 mDownThreadMap.remove(id);
             }
             mDownloadDao.delete(id, isRetained);
-            if (mDownLoadListeners.containsKey(id)) {
-                mDownLoadListeners.remove(id);
-            }
+            mDownLoadListeners.remove(id);
 //            sendDeleteMessage(DownloadFlag.DELETED, url);
         }
     }
@@ -352,7 +351,7 @@ public class DownloadService extends Service implements Handler.Callback {
     public void pause(@NonNull String... ids) {
         for (String id : ids) {
             if (mDownThreadMap.containsKey(id)) {
-                mDownThreadMap.get(id).pause();
+                Objects.requireNonNull(mDownThreadMap.get(id), "DownloadService pause failed").pause();
                 mDownThreadMap.remove(id);
             }
             mDownloadDao.updateStatus(id, DownloadFlag.PAUSED);
@@ -404,7 +403,6 @@ public class DownloadService extends Service implements Handler.Callback {
         private String downloadUrl;
         private String savePath;
         private DownloadEntity mDownloadEntity;
-        private long totalSize;
         private volatile boolean isPaused;
 
         DownThread(@NonNull String id, @NonNull String target, String url) {
@@ -468,7 +466,7 @@ public class DownloadService extends Service implements Handler.Callback {
                 conn.setRequestProperty(DownloadExtra.REQUEST_PROPERTY_KEY2, DownloadExtra.REQUEST_PROPERTY_VALUE2);
                 conn.setRequestProperty(DownloadExtra.REQUEST_PROPERTY_KEY3, DownloadExtra.REQUEST_PROPERTY_VALUE3);
                 conn.setRequestProperty(DownloadExtra.REQUEST_PROPERTY_KEY4, String.format(Locale.getDefault(), "bytes=%d-", range));
-                totalSize = (range == 0 ? conn.getContentLength() : mDownloadEntity.getTotal());
+                long totalSize = (range == 0 ? conn.getContentLength() : mDownloadEntity.getTotal());
                 if (savePath.endsWith(".do")) {
                     new File(savePath).delete();
                     String contentDisposition = new String(conn.getHeaderField("Content-Disposition").getBytes("UTF-8"), "UTF-8");
@@ -479,8 +477,9 @@ public class DownloadService extends Service implements Handler.Callback {
                 if (totalSize > getAvailableStore()) {
                     Cog.e(TAG, "存储空间不足,total=" + totalSize + " availableStore=" + getAvailableStore());
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Downloader.ACTION_DOWNLOAD_OUT_OF_MEMORY));
-//                    throw new IOException("存储空间不足");
+                    throw new IOException("存储空间不足");
                 } else {
+                    if(totalSize<0) throw new IllegalAccessException(savePath+" file size <0");
                     currentPart = new RandomAccessFile(savePath, DownloadExtra.RANDOM_ACCESS_FILE_MODE);
                     currentPart.setLength(totalSize);
                     currentPart.close();

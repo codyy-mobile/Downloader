@@ -15,10 +15,14 @@ allprojects {
 **Step 2. Add the dependency**
 ```
 dependencies {
-            implementation 'com.github.codyy-mobile:Downloader:1.3.1'
+            implementation 'com.github.codyy-mobile:Downloader:1.4.0'
 	}
 
 ```
-## [API](https://jitpack.io/com/github/codyy-mobile/Downloader/1.3.1/javadoc/)
+## [API](https://jitpack.io/com/github/codyy-mobile/Downloader/1.4.0/javadoc/)
+
+## 更新历史
+- 1.4.0:适配Android Q
+- 1.3.1:修复下载完成状态同步问题
 
 

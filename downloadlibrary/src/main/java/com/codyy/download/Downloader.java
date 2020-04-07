@@ -6,8 +6,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import androidx.annotation.NonNull;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import com.codyy.download.entity.DownloadEntity;
 import com.codyy.download.service.DownLoadListener;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 文件下载器
@@ -55,15 +57,18 @@ public class Downloader {
      * 下载服务连接成功前,缓存下载任务
      */
     private Map<String, DownloadEntity> mDownTasks = new HashMap<>();
-
     private Downloader(Context context) {
         this.context = context;
+    }
+
+    //8.0以上，service会被系统杀死，被杀死后，需要重新启动service才能正常进行下载
+    public static void setBound(boolean isBound) {
+        bound = isBound;
     }
 
     public static boolean isBound() {
         return bound;
     }
-
     /**
      * 获取下载器单例
      *
@@ -109,10 +114,20 @@ public class Downloader {
                     mConnectedListener.onConnected();
                 }
                 for (String key : mDownTasks.keySet()) {
-                    mDownloadService.download(mDownTasks.get(key));
+                    DownloadEntity entity = mDownTasks.get(key);
+                    if (entity != null) {
+                        mDownloadService.download(entity);
+                    } else {
+                        mDownTasks.remove(key);
+                    }
                 }
                 for (String key : mReceiveDownloadStatus.keySet()) {
-                    mDownloadService.receiveDownloadStatus(key, mReceiveDownloadStatus.get(key));
+                    DownLoadListener loadListener = mReceiveDownloadStatus.get(key);
+                    if (loadListener != null) {
+                        mDownloadService.receiveDownloadStatus(key, loadListener);
+                    } else {
+                        mReceiveDownloadStatus.remove(key);
+                    }
                 }
                 for (String key : mReceiveDownloadRate.keySet()) {
                     mDownloadService.receiveDownloadRate(mReceiveDownloadRate.get(key));
@@ -217,7 +232,11 @@ public class Downloader {
      */
     public void pause(@NonNull List<String> ids) {
         if (mDownloadService != null) {
-            mDownloadService.pause((String[]) ids.toArray());
+            try {
+                mDownloadService.pause((String[]) Objects.requireNonNull(ids.toArray(), "Downloader pause failed,ids is null "));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -255,7 +274,11 @@ public class Downloader {
      * @param ids 下载地址
      */
     public void delete(@NonNull List<String> ids) {
-        this.delete(false, (String[]) ids.toArray());
+        try {
+            this.delete(false, (String[]) Objects.requireNonNull(ids.toArray(), "Downloader delete failed,ids is null "));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

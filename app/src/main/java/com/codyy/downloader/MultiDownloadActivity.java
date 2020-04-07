@@ -7,13 +7,6 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.StatFs;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -24,6 +17,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.codyy.download.Downloader;
 import com.codyy.download.entity.DownloadEntity;
@@ -254,6 +255,7 @@ public class MultiDownloadActivity extends AppCompatActivity {
             public void onComplete(DownloadEntity entity) {
                 Log.d("entity", entity.toString());
             }
+
         });
         Downloader.getInstance(getApplicationContext()).setHoneyCombDownload(true);
     }
@@ -355,6 +357,12 @@ public class MultiDownloadActivity extends AppCompatActivity {
                 public void onProgress(DownloadStatus status) {
                     pb.setProgress((int) status.getPercentNumber());
                     tvName.setText(status.getFormatStatusString());
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    super.onError(e);
+                    btn.setText("出错");
                 }
 
                 @Override

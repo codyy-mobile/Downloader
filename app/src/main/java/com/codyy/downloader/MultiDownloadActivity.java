@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StatFs;
 import android.text.format.Formatter;
@@ -34,6 +35,7 @@ import com.codyy.download.service.SimpleDownloadListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by lijian on 2017/6/6.
@@ -78,7 +80,13 @@ public class MultiDownloadActivity extends AppCompatActivity {
         mFileEntities.add(new FileEntity("TeamViewer_Setup", "http://mock.5idoo.com/file/TeamViewer_Setup.exe"));
         mFileEntities.add(new FileEntity("OSP", "http://srv.codyy.cn/images/9059e96d-98e5-44dc-b509-a46d11716960.apk/app.apk"));
         recyclerView.setAdapter(new FileAdapter(mFileEntities));
-        checkPermission();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            checkPermission();
+        } else {
+            Log.e("path", this.getExternalFilesDir(null).getAbsolutePath());
+        }
+
+
     }
 
     @Override
@@ -92,7 +100,7 @@ public class MultiDownloadActivity extends AppCompatActivity {
 
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
-                    mEditText.setText(Formatter.formatFileSize(getBaseContext(), getAvailableStore(getExternalStoragePath())) + "/" + Formatter.formatFileSize(getBaseContext(), getTotalStore(getExternalStoragePath())));
+//                    mEditText.setText(Formatter.formatFileSize(getBaseContext(), getAvailableStore(getExternalStoragePath())) + "/" + Formatter.formatFileSize(getBaseContext(), getTotalStore(getExternalStoragePath())));
                 } else {
 
                     // permission denied, boo! Disable the
@@ -154,24 +162,29 @@ public class MultiDownloadActivity extends AppCompatActivity {
     }
 
     // 获取SD卡路径
-    public static String getExternalStoragePath() {
-        // 获取SdCard状态
-        String state = android.os.Environment.getExternalStorageState();
+    public String getExternalStoragePath() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return Objects.requireNonNull(getApplication().getExternalFilesDir(null)).getAbsolutePath();
+        } else {
+            // 获取SdCard状态
+            String state = android.os.Environment.getExternalStorageState();
 
-        // 判断SdCard是否存在并且是可用的
+            // 判断SdCard是否存在并且是可用的
 
-        if (android.os.Environment.MEDIA_MOUNTED.equals(state)) {
+            if (android.os.Environment.MEDIA_MOUNTED.equals(state)) {
 
-            if (android.os.Environment.getExternalStorageDirectory().canWrite()) {
+                if (android.os.Environment.getExternalStorageDirectory().canWrite()) {
 
-                return android.os.Environment.getExternalStorageDirectory()
-                        .getPath();
+                    return android.os.Environment.getExternalStorageDirectory()
+                            .getPath();
+
+                }
 
             }
 
+            return null;
         }
 
-        return null;
 
     }
 
@@ -185,7 +198,7 @@ public class MultiDownloadActivity extends AppCompatActivity {
         return Formatter.formatFileSize(getBaseContext(), mi.availMem);// 将获取的内存大小规格化
     }
 
-    public static long getAvailableStore(String filePath) {
+    public long getAvailableStore(String filePath) {
 
         // 取得sdcard文件路径
 

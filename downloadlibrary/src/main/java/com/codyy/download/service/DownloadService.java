@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -186,9 +187,17 @@ public class DownloadService extends Service implements Handler.Callback {
     private String getSavePath(@NonNull String downloadUrl, String path) {
         String name = downloadUrl.substring(downloadUrl.lastIndexOf(File.separator) + 1);
         if (TextUtils.isEmpty(path)) {
-            return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name).getAbsolutePath();
+            return new File(getFileParentPath(), name).getAbsolutePath();
         } else {
             return path;
+        }
+    }
+
+    private File getFileParentPath() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        } else {
+            return getApplication().getExternalFilesDir(null);
         }
     }
 
@@ -479,7 +488,7 @@ public class DownloadService extends Service implements Handler.Callback {
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent(Downloader.ACTION_DOWNLOAD_OUT_OF_MEMORY));
                     throw new IOException("存储空间不足");
                 } else {
-                    if(totalSize<0) throw new IllegalAccessException(savePath+" file size <0");
+                    if (totalSize < 0) throw new IllegalAccessException(savePath + " file size <0");
                     currentPart = new RandomAccessFile(savePath, DownloadExtra.RANDOM_ACCESS_FILE_MODE);
                     currentPart.setLength(totalSize);
                     currentPart.close();
@@ -490,7 +499,7 @@ public class DownloadService extends Service implements Handler.Callback {
                         inStream = conn.getInputStream();
                         byte[] buffer = new byte[4096];
                         int hasRead;
-                        while (!mDownloadDao.isPaused(id) && length < totalSize && (hasRead = inStream.read(buffer)) != -1) {
+                        while (!isPaused&& length < totalSize && (hasRead = inStream.read(buffer)) != -1) {
                             currentPart.write(buffer, 0, hasRead);
                             length += hasRead;
                             if (mRateListener != null) {
@@ -539,7 +548,7 @@ public class DownloadService extends Service implements Handler.Callback {
     }
 
     // 获取SD卡路径
-    private static String getExternalStoragePath() {
+    private String getExternalStoragePath() {
         // 获取SdCard状态
         String state = android.os.Environment.getExternalStorageState();
         // 判断SdCard是否存在并且是可用的
@@ -552,8 +561,8 @@ public class DownloadService extends Service implements Handler.Callback {
         return null;
     }
 
-    private static long getAvailableStore() {
-        String path = getExternalStoragePath();
+    private long getAvailableStore() {
+        String path = (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) ? getExternalStoragePath() : Objects.requireNonNull(getApplication().getExternalFilesDir(null)).getPath();
         if (path == null) return -1;
         // 取得sdcard文件路径
         StatFs statFs = new StatFs(path);
